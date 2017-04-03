@@ -48,14 +48,14 @@ impl Value {
 
 struct Env<'a> {
     functions: HashMap<&'a str, Box<Fn(&[Value]) -> Result<Value, String>>>,
-    variables: HashMap<&'a str, Value>,
+    variables: HashMap<String, Value>,
 }
 
 impl<'a> Env<'a> {
     fn new() -> Env<'a> {
         let mut functions: HashMap<&'a str, Box<Fn(&[Value]) -> Result<Value, String>>> =
             HashMap::new();
-        let mut variables: HashMap<&'a str, Value> = HashMap::new();
+        let mut variables: HashMap<String, Value> = HashMap::new();
         functions.insert("begin",
                          Box::new(|args: &[Value]| {
                              args.last()
@@ -66,7 +66,7 @@ impl<'a> Env<'a> {
                          Box::new(|args: &[Value]| {
                              Ok(args.iter().fold(Value::Int(1), |product, i| product.mul(*i)))
                          }));
-        variables.insert("pi", Value::Float(3.141592));
+        variables.insert("pi".into(), Value::Float(3.141592));
         Env {
             variables: variables,
             functions: functions,
@@ -153,7 +153,7 @@ fn parse<'a>(tokens: &[&'a str]) -> Result<(usize, Expression<'a>), String> {
     Ok((index, expr))
 }
 
-fn eval<'a>(expr: &[Ast<'a>], env: &mut Env<'a>) -> Result<Value, String> {
+fn eval<'a>(expr: &[Ast<'a>], env: &mut Env) -> Result<Value, String> {
     if let Some(x) = expr.first() {
         Ok(match x {
             &Ast::Conditional(ref test, ref conseq, ref alt) => {
@@ -169,7 +169,7 @@ fn eval<'a>(expr: &[Ast<'a>], env: &mut Env<'a>) -> Result<Value, String> {
             }
             &Ast::Definition(ref var, ref exp) => {
                 let val = eval(&exp, env)?;
-                env.variables.insert(var, val);
+                env.variables.insert(String::from(*var), val);
                 val
             }
             &Ast::Procedure(ref name, ref exp) => {
@@ -194,14 +194,12 @@ fn eval<'a>(expr: &[Ast<'a>], env: &mut Env<'a>) -> Result<Value, String> {
 }
 
 fn main() {
+    let mut env = Env::new();
     match Ok("(begin (define r 10) (* pi (* r r)))")
         .map(tokenize)
         .and_then(|x| parse(&x))
-        .and_then(|(_, x)| {
-            let mut env = Env::new();
-            eval(&x, &mut env)
-        }) {
+        .and_then(|(_, x)| eval(&x, &mut env)) {
         Ok(result) => println!("{}", result),
-        Err(e) => println!("Error in REPL: {}", e),
+        Err(e) => println!("Error: {}", e),
     }
 }
