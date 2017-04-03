@@ -14,11 +14,11 @@ enum Value {
 impl std::str::FromStr for Value {
     type Err = String;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if let Ok(f) = f32::from_str(s) {
-            Ok(Value::Float(f))
+        if let Ok(i) = i32::from_str(s) {
+            Ok(Value::Int(i))
         } else {
-            if let Ok(i) = i32::from_str(s) {
-                Ok(Value::Int(i))
+            if let Ok(f) = f32::from_str(s) {
+                Ok(Value::Float(f))
             } else {
                 Err(format!("Couldn't parse number from '{}'", s))
             }
