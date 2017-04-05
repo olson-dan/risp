@@ -119,7 +119,7 @@ enum Ast<'a> {
     Procedure(&'a str, Expression<'a>),
 }
 
-fn parse<'a>(tokens: &[&'a str], til_end: bool) -> Result<(usize, Expression<'a>), String> {
+fn parse<'a>(tokens: &[&'a str], in_arg_list: bool) -> Result<(usize, Expression<'a>), String> {
     let mut expr: Expression<'a> = Vec::new();
     let mut index = 0;
     while let Some(t) = tokens.get(index) {
@@ -134,7 +134,7 @@ fn parse<'a>(tokens: &[&'a str], til_end: bool) -> Result<(usize, Expression<'a>
                         index += x;
                         let (y, conseq) = parse(&tokens[index..], false)?;
                         index += y;
-                        let (z, alt) = parse(&tokens[index..], true)?;
+                        let (z, alt) = parse(&tokens[index..], false)?;
                         index += z;
                         Ast::Conditional(test, conseq, alt)
                     }
@@ -143,17 +143,20 @@ fn parse<'a>(tokens: &[&'a str], til_end: bool) -> Result<(usize, Expression<'a>
                         let var = tokens.get(index)
                             .ok_or(format!("expected variable name at token {}", index))?;
                         index += 1;
-                        let (x, y) = parse(&tokens[index..], true)?;
+                        let (x, val) = parse(&tokens[index..], true)?;
                         index += x;
-                        Ast::Definition(var, y)
+                        Ast::Definition(var, val)
                     }
                     _ => {
                         index += 2;
-                        let (x, y) = parse(&tokens[index..], true)?;
+                        let (x, args) = parse(&tokens[index..], true)?;
                         index += x;
-                        Ast::Procedure(name, y)
+                        Ast::Procedure(name, args)
                     }
                 });
+                if !in_arg_list {
+                    break;
+                }
             }
             ")" => {
                 index += 1;
@@ -166,7 +169,7 @@ fn parse<'a>(tokens: &[&'a str], til_end: bool) -> Result<(usize, Expression<'a>
                 } else {
                     Ast::Variable(*t)
                 });
-                if !til_end {
+                if !in_arg_list {
                     break;
                 }
             }
