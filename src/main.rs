@@ -119,7 +119,7 @@ enum Ast<'a> {
     Procedure(&'a str, Expression<'a>),
 }
 
-fn parse<'a>(tokens: &[&'a str], in_arg_list: bool) -> Result<(usize, Expression<'a>), String> {
+fn parse<'a>(tokens: &[&'a str], mut in_arg_list: bool) -> Result<(usize, Expression<'a>), String> {
     let mut expr: Expression<'a> = Vec::new();
     let mut index = 0;
     while let Some(t) = tokens.get(index) {
@@ -136,6 +136,7 @@ fn parse<'a>(tokens: &[&'a str], in_arg_list: bool) -> Result<(usize, Expression
                         index += y;
                         let (z, alt) = parse(&tokens[index..], false)?;
                         index += z;
+                        in_arg_list = true; // ensure we eat the )
                         Ast::Conditional(test, conseq, alt)
                     }
                     "define" => {
