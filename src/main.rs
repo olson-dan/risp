@@ -69,8 +69,8 @@ impl<'a> Env<'a> {
             HashMap::new();
         let mut variables: HashMap<String, Value> = HashMap::new();
         let begin = Box::new(|args: &[Value]| {
-                                 args.last().map(|x| x.clone()).ok_or(format!("begin function missing arguments"))
-                             });
+            args.last().map(|x| x.clone()).ok_or(format!("begin function missing arguments"))
+        });
         functions.insert("begin", begin);
         let mul = Box::new(|args: &[Value]| {
             let mut result = args.first().unwrap_or(&Value::Int(0)).clone();
@@ -81,9 +81,9 @@ impl<'a> Env<'a> {
         });
         functions.insert("*", mul);
         let list = Box::new(|args: &[Value]| {
-                                let l: Vec<Value> = Vec::from(args);
-                                Ok(Value::List(l))
-                            });
+            let l: Vec<Value> = Vec::from(args);
+            Ok(Value::List(l))
+        });
         functions.insert("list", list);
         variables.insert("pi".into(), Value::Float(3.141592));
         Env {
@@ -128,32 +128,32 @@ fn parse<'a>(tokens: &[&'a str], til_end: bool) -> Result<(usize, Expression<'a>
                 let name = tokens.get(index + 1)
                     .ok_or(format!("expected name at token {}", index + 1))?;
                 expr.push(match *name {
-                              "if" => {
-                    index += 2;
-                    let (x, test) = parse(&tokens[index..], false)?;
-                    index += x;
-                    let (y, conseq) = parse(&tokens[index..], false)?;
-                    index += y;
-                    let (z, alt) = parse(&tokens[index..], true)?;
-                    index += z;
-                    Ast::Conditional(test, conseq, alt)
-                }
-                              "define" => {
-                    index += 2;
-                    let var = tokens.get(index)
-                        .ok_or(format!("expected variable name at token {}", index))?;
-                    index += 1;
-                    let (x, y) = parse(&tokens[index..], true)?;
-                    index += x;
-                    Ast::Definition(var, y)
-                }
-                              _ => {
-                    index += 2;
-                    let (x, y) = parse(&tokens[index..], true)?;
-                    index += x;
-                    Ast::Procedure(name, y)
-                }
-                          });
+                    "if" => {
+                        index += 2;
+                        let (x, test) = parse(&tokens[index..], false)?;
+                        index += x;
+                        let (y, conseq) = parse(&tokens[index..], false)?;
+                        index += y;
+                        let (z, alt) = parse(&tokens[index..], true)?;
+                        index += z;
+                        Ast::Conditional(test, conseq, alt)
+                    }
+                    "define" => {
+                        index += 2;
+                        let var = tokens.get(index)
+                            .ok_or(format!("expected variable name at token {}", index))?;
+                        index += 1;
+                        let (x, y) = parse(&tokens[index..], true)?;
+                        index += x;
+                        Ast::Definition(var, y)
+                    }
+                    _ => {
+                        index += 2;
+                        let (x, y) = parse(&tokens[index..], true)?;
+                        index += x;
+                        Ast::Procedure(name, y)
+                    }
+                });
             }
             ")" => {
                 index += 1;
@@ -162,10 +162,10 @@ fn parse<'a>(tokens: &[&'a str], til_end: bool) -> Result<(usize, Expression<'a>
             _ => {
                 index += 1;
                 expr.push(if let Ok(v) = t.parse::<Value>() {
-                              Ast::Literal(v)
-                          } else {
-                              Ast::Variable(*t)
-                          });
+                    Ast::Literal(v)
+                } else {
+                    Ast::Variable(*t)
+                });
                 if !til_end {
                     break;
                 }
@@ -181,9 +181,9 @@ fn eval<'a>(expr: &[Ast<'a>], env: &mut Env) -> Result<Value, String> {
             &Ast::Conditional(ref test, ref conseq, ref alt) => {
                 let result = eval(&test, env)?;
                 if match result {
-                       Value::Bool(b) => b,
-                       _ => return Err(format!("conditional is not a bool type")),
-                   } {
+                    Value::Bool(b) => b,
+                    _ => return Err(format!("conditional is not a bool type")),
+                } {
                     Ok(eval(&conseq, env)?)
                 } else {
                     Ok(eval(&alt, env)?)
@@ -208,9 +208,9 @@ fn eval<'a>(expr: &[Ast<'a>], env: &mut Env) -> Result<Value, String> {
             &Ast::Literal(ref val) => Ok(val.clone()),
             &Ast::Variable(name) => {
                 Ok(env.variables
-                       .get(name)
-                       .ok_or(format!("Unknown value for variable '{}'", name))?
-                       .clone())
+                    .get(name)
+                    .ok_or(format!("Unknown value for variable '{}'", name))?
+                    .clone())
             }
         }
     } else {
@@ -229,10 +229,10 @@ fn main() {
         }
         let mut input = String::new();
         match stdin.read_line(&mut input)
-                  .map_err(|e| format!("{}", e))
-                  .map(|_| tokenize(&input))
-                  .and_then(|x| parse(&x, false))
-                  .and_then(|(_, x)| eval(&x, &mut env)) {
+            .map_err(|e| format!("{}", e))
+            .map(|_| tokenize(&input))
+            .and_then(|x| parse(&x, false))
+            .and_then(|(_, x)| eval(&x, &mut env)) {
             Ok(result) => println!("{}", result),
             Err(e) => {
                 if e != "" {
